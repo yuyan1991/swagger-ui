@@ -1,54 +1,12 @@
 const path = require("path")
 
-const rules = [
-  { test: /\.(worker\.js)(\?.*)?$/,
-    use: [
-      {
-        loader: "worker-loader",
-        options: {
-          inline: true
-        }
-      },
-      { loader: "babel-loader" }
-    ]
-  },
-  { test: /\.(jsx)(\?.*)?$/,
-    use: [
-      { loader: "react-hot-loader" }, 
-      { loader: "babel-loader" }
-    ]
-  },
-  { test: /\.(css)(\?.*)?$/,
-    use: [
-      "style-loader",
-      "css-loader",
-      "postcss-loader"
-    ]
-  },
-  { test: /\.(scss)(\?.*)?$/,
-    use: [
-      "style-loader",
-      "css-loader",
-      {
-        loader: "postcss-loader",
-        options: { sourceMap: true }
-      },
-      { loader: "sass-loader",
-        options: {
-          outputStyle: "expanded",
-          sourceMap: true,
-          sourceMapContents: "true"
-        }
-      }
-    ]
-  }
-]
+const rules = []
 
 module.exports = require("./make-webpack-config")(rules, {
   _special: {
     separateStylesheets: false,
   },
-	devtool: "eval",
+	devtool: "eval-source-map",
   entry: {
     "swagger-ui-bundle": [
       "./src/polyfills",

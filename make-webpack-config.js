@@ -2,6 +2,7 @@ var path = require("path")
 
 var webpack = require('webpack')
 var ExtractTextPlugin = require('extract-text-webpack-plugin')
+const MinifyPlugin = require("babel-minify-webpack-plugin");
 const CopyWebpackPlugin = require('copy-webpack-plugin')
 var deepExtend = require('deep-extend')
 const {gitDescribeSync} = require('git-describe')
@@ -64,9 +65,7 @@ module.exports = function(rules, options) {
   if( specialOptions.minimize ) {   // production mode
 
     plugins.push(
-      new webpack.optimize.UglifyJsPlugin({
-        sourceMap: true,
-      }),
+      new MinifyPlugin(),
       new webpack.LoaderOptionsPlugin({
         options: {
           context: __dirname
