@@ -1,7 +1,7 @@
 import React from "react"
 import PropTypes from "prop-types"
 import { helpers } from "swagger-client"
-
+import { sanitizeUrl } from "core/utils"
 const { opId } = helpers
 
 export default class Operations extends React.Component {
@@ -98,7 +98,7 @@ export default class Operations extends React.Component {
                           { tagExternalDocsUrl ? ": " : null }
                           { tagExternalDocsUrl ?
                             <a
-                              href={tagExternalDocsUrl}
+                              href={sanitizeUrl(tagExternalDocsUrl)}
                               onClick={(e) => e.stopPropagation()}
                               target={"_blank"}
                             >{tagExternalDocsUrl}</a> : null

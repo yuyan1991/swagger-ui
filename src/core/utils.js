@@ -1,5 +1,5 @@
 import Im from "immutable"
-
+import { sanitizeUrl as braintreeSanitizeUrl } from "@braintree/sanitize-url"
 import camelCase from "lodash/camelCase"
 import upperFirst from "lodash/upperFirst"
 import _memoize from "lodash/memoize"
@@ -649,4 +649,8 @@ export const shallowEqualKeys = (a,b, keys) => {
   return !!find(keys, (key) => {
     return eq(a[key], b[key])
   })
+}
+
+export function sanitizeUrl(url) {
+  return braintreeSanitizeUrl(url)
 }
