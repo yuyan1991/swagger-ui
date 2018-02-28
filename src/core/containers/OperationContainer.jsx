@@ -2,7 +2,7 @@ import React, { PureComponent } from "react"
 import PropTypes from "prop-types"
 import ImPropTypes from "react-immutable-proptypes"
 import { helpers } from "swagger-client"
-import { Iterable, fromJS } from "immutable"
+import { Iterable, fromJS, Map } from "immutable"
 
 const { opId } = helpers
 
@@ -56,13 +56,13 @@ export default class OperationContainer extends PureComponent {
 
   mapStateToProps(nextState, props) {
     const { op, layoutSelectors, getConfigs } = props
-    const { docExpansion, deepLinking, displayOperationId, displayRequestDuration } = getConfigs()
+    const { docExpansion, deepLinking, displayOperationId, displayRequestDuration, supportedSubmitMethods } = getConfigs()
     const showSummary = layoutSelectors.showSummary()
     const operationId = op.getIn(["operation", "operationId"]) || op.getIn(["operation", "__originalOperationId"]) || opId(op.get("operation"), props.path, props.method) || op.get("id")
     const isShownKey = ["operations", props.tag, operationId]
     const isDeepLinkingEnabled = deepLinking && deepLinking !== "false"
-    const allowTryItOut = typeof props.allowTryItOut === "undefined" ?
-      props.specSelectors.allowTryItOutFor(props.path, props.method) : props.allowTryItOut
+    const allowTryItOut = supportedSubmitMethods.indexOf(props.method) >= 0 && (typeof props.allowTryItOut === "undefined" ?
+      props.specSelectors.allowTryItOutFor(props.path, props.method) : props.allowTryItOut)
     const security = op.getIn(["operation", "security"]) || props.specSelectors.security()
 
     return {
@@ -82,31 +82,24 @@ export default class OperationContainer extends PureComponent {
   }
 
   componentWillReceiveProps(nextProps) {
-    const defaultContentType = "application/json"
-    let { specActions, path, method, op } = nextProps
-    let operation = op.get("operation")
-    let producesValue = operation.get("produces_value")
-    let produces = operation.get("produces")
-    let consumes = operation.get("consumes")
-    let consumesValue = operation.get("consumes_value")
+    const { path, method, specActions, specSelectors, response, isShown } = nextProps
+    const resolvedSubtree = specSelectors.specResolvedSubtree(["paths", path, method])
 
-    if(nextProps.response !== this.props.response) {
+    if(response !== this.props.response) {
       this.setState({ executeInProgress: false })
     }
 
-    if (producesValue === undefined) {
-      producesValue = produces && produces.size ? produces.first() : defaultContentType
-      specActions.changeProducesValue([path, method], producesValue)
-    }
-
-    if (consumesValue === undefined) {
-      consumesValue = consumes && consumes.size ? consumes.first() : defaultContentType
-      specActions.changeConsumesValue([path, method], consumesValue)
+    if(isShown && resolvedSubtree === undefined) {
+      specActions.requestResolvedSubtree(["paths", path, method])
     }
   }
 
   toggleShown =() => {
-    let { layoutActions, tag, operationId, isShown } = this.props
+    let { layoutActions, specActions, tag, operationId, path, method, isShown } = this.props
+    if(!isShown) {
+      // transitioning from collapsed to expanded
+      specActions.requestResolvedSubtree(["paths", path, method])
+    }
     layoutActions.show(["operations", tag, operationId], !isShown)
   }
 
@@ -126,7 +119,7 @@ export default class OperationContainer extends PureComponent {
 
   render() {
     let {
-      op,
+      op: unresolvedOp,
       tag,
       path,
       method,
@@ -158,10 +151,14 @@ export default class OperationContainer extends PureComponent {
 
     const Operation = getComponent( "operation" )
 
+    const resolvedSubtree = specSelectors.specResolvedSubtree(["paths", path, method]) || Map()
+
     const operationProps = fromJS({
-      op,
+      op: resolvedSubtree || Map(),
       tag,
       path,
+      summary: unresolvedOp.getIn(["operation", "summary"]) || "",
+      deprecated: resolvedSubtree.get("deprecated") || unresolvedOp.getIn(["operation", "deprecated"]) || false,
       method,
       security,
       isAuthorized,
